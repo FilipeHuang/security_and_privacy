@@ -24,10 +24,8 @@ def gerar_graficos():
     plt.grid(True, which="both", ls="--", alpha=0.5)
     plt.legend()
     
-    # print("A abrir janela com o gráfico...")
-    # plt.show()
-    plt.savefig("grafico.png", dpi=300)
-    print("Gráfico guardado")
+    print("A abrir janela com o gráfico...")
+    plt.show()
 
 if __name__ == "__main__":
     gerar_graficos()

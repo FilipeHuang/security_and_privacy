@@ -6,11 +6,12 @@ import math
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-# Variáveis Globais
+# Chave AES de 256 bits (32 bytes) e Nonce para o modo CTR
 chave = os.urandom(32)
 nonce = os.urandom(16)
 tamanhos = [8, 64, 512, 4096, 32768, 262144, 2097152]
 
+# Geração de chaves RSA e extração dos parâmetros matemáticos puros (n, e, d)
 chave_privada = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 n_mod = chave_privada.public_key().public_numbers().n
 e_pub = chave_privada.public_key().public_numbers().e
@@ -25,7 +26,7 @@ def gerar_ficheiros():
 def tempo_execucao(funcao, dados, repeticoes=100):
     funcao(dados) # Warm-up para evitar cold start
     tempos = timeit.repeat(lambda: funcao(dados), number=1, repeat=repeticoes)
-    tempos_us = [t * 1_000_000 for t in tempos] 
+    tempos_us = [t * 1_000_000 for t in tempos] # Conversão direta para microsegundos (us)
     media_us = statistics.mean(tempos_us)
     return media_us, (statistics.stdev(tempos_us) if repeticoes > 1 else 0.0)
 
@@ -39,11 +40,13 @@ def AES_decifra(dados):
     decriptador = cifra.decryptor()
     return decriptador.update(dados) + decriptador.finalize()
 
+# Operação RSA base (Cifra): m^e mod n
 def rsa_funcao(r_bytes):
     r_int = int.from_bytes(r_bytes, 'big')
     c_int = pow(r_int, e_pub, n_mod)
     return c_int.to_bytes(256, 'big') 
 
+# Operação RSA inversa (Decifra): c^d mod n
 def rsa_inverso(c_bytes):
     c_int = int.from_bytes(c_bytes, 'big')
     r_int = pow(c_int, d_priv, n_mod)
@@ -55,12 +58,13 @@ def xor_bytes(a, b):
 def RSA_cifra_custom(m):
     l = 32
     r = os.urandom(32)
-    c0 = rsa_funcao(r)
+    c0 = rsa_funcao(r) # Encapsula a seed aleatória 'r' com o RSA puro
     n_blocos = math.ceil(len(m) / l)
     blocos_cifra = [c0]
     for i in range(n_blocos):
         m_i = m[i*l : (i+1)*l]
         i_bytes = i.to_bytes(4, 'big')
+        # Combina a seed 'r' com o índice do bloco e aplica XOR com a mensagem
         h = hashlib.sha256(i_bytes + r).digest()
         c_i = xor_bytes(h[:len(m_i)], m_i)
         blocos_cifra.append(c_i)
@@ -68,6 +72,7 @@ def RSA_cifra_custom(m):
 
 def RSA_decifra_custom(ct):
     l = 32
+    # Extrai os primeiros 256 bytes (c0) e recupera a seed 'r' usando a chave privada
     c0 = ct[:256]
     r = rsa_inverso(c0)
     ct_restante = ct[256:]
@@ -108,6 +113,7 @@ def executar_benchmarks():
         m_dec_aes, s_dec_aes = tempo_execucao(AES_decifra, cifra_aes)
         resultados["aes_dec"].append(m_dec_aes)
         
+        # Reduzir o número de repetições do RSA para tamanhos gigantes (demora demasiado)
         reps_rsa = 10 if tamanho >= 262144 else 100
         m_enc_rsa, s_enc_rsa = tempo_execucao(RSA_cifra_custom, texto_limpo, repeticoes=reps_rsa)
         resultados["rsa_enc"].append(m_enc_rsa)
