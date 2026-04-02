@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project implements **Assignment #1** from the *Security and Privacy* Performance Measures for Message Digests, Symmetric and Asymmetric Cryptography.
+This project implements *Assignment #1* from the **Security and Privacy** course, which focuses on evaluating the performance of message digests, symmetric encryption, and asymmetric cryptographic mechanisms.
 
 It performs performance benchmarking of:
 - **AES-256** in Counter (CTR) mode (encryption + decryption)
@@ -28,7 +28,7 @@ All cryptographic operations are timed **only** (file generation and side effect
 **Python Version:**  
 Tested in `Python 3.12`.
 
-**Python Packages versions** (install via pip):
+**Python Packages versions used** (install via pip):
 
 ```bash
 pip install cryptography==46.0.6 matplotlib==3.10.8
